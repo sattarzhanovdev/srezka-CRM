@@ -20,14 +20,12 @@ const prefixFromName = (name) => {
   if (words.length === 1) {
     return words[0].slice(0, 8);
   }
-  // первые буквы 2-3 слов или склейка первых частей
   const p = (words[0][0] || '') + (words[1][0] || '') + (words[2]?.[0] || '');
   return (p || 'SKU').toUpperCase();
 };
 
 const rand4 = () => Math.random().toString(36).slice(2, 6).toUpperCase();
 const shortTs = () => Date.now().toString(36).slice(-4).toUpperCase();
-
 const genCandidate = (name) => `${prefixFromName(name)}-${shortTs()}-${rand4()}`;
 
 const createEmptyRow = () => ({
@@ -48,6 +46,12 @@ const AddStock = ({ setActive }) => {
 
   // множество существующих кодов (из бэка)
   const [existingCodes, setExistingCodes] = React.useState(new Set())
+
+  // локальное состояние для "добавить категорию"
+  const [catCreatorOpen, setCatCreatorOpen] = React.useState(false)
+  const [newCatName, setNewCatName] = React.useState('')
+  const [catSaving, setCatSaving] = React.useState(false)
+  const [catError, setCatError] = React.useState('')
 
   const branchAPI = 'https://srezka.pythonanywhere.com/'
 
@@ -75,7 +79,6 @@ const AddStock = ({ setActive }) => {
     fetch(`${branchAPI}clients/stocks/`)
       .then(res => res.json())
       .then(list => {
-        // на твоём API code может быть строкой "A,B" или массивом
         const all = new Set()
         ;(Array.isArray(list) ? list : []).forEach(item => {
           const code = item?.code ?? ''
@@ -118,8 +121,6 @@ const AddStock = ({ setActive }) => {
     price_seller: Number(item.price_seller) || 0,
     unit: item.unit || 'шт',
     fixed_quantity: Number(item.fixed_quantity || item.quantity) || 0,
-    // если нужен category_id — замени ключ:
-    // category_id: item.category ? Number(item.category) : null,
     category_id: item.category ? Number(item.category) : null,
   })
 
@@ -140,6 +141,65 @@ const AddStock = ({ setActive }) => {
     }
     used.add(candidate)
     return candidate
+  }
+
+  // ====== создание категории «на месте» ======
+  const openCatCreator = () => {
+    setCatError('')
+    setNewCatName('')
+    setCatCreatorOpen(true)
+  }
+  const closeCatCreator = () => {
+    setCatError('')
+    setNewCatName('')
+    setCatCreatorOpen(false)
+  }
+
+  const saveCategory = async () => {
+    const name = newCatName.trim()
+    if (!name) {
+      setCatError('Введите название категории')
+      return
+    }
+    // простая проверка на дубликат по имени (регистр игнорим)
+    const dup = categories.find(c => (c.name || '').toLowerCase() === name.toLowerCase())
+    if (dup) {
+      setCatError('Такая категория уже есть')
+      return
+    }
+    try {
+      setCatSaving(true)
+      setCatError('')
+      const res = await fetch(`${branchAPI}clients/categories/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      })
+      if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        throw new Error(`${res.status}: ${text}`)
+      }
+      const created = await res.json().catch(() => null)
+      if (!created || !created.id) {
+        // если бек вернул не объект — подстрахуемся
+        // сымитируем id (не критично)
+        const fakeId = Math.floor(Math.random() * 1e9)
+        const newCat = { id: fakeId, name }
+        setCategories(prev => [...prev, newCat])
+        // выставим выбранной для всех строк, где пусто
+        setRows(prev => prev.map(r => (!r.category ? { ...r, category: String(newCat.id) } : r)))
+      } else {
+        // нормальный сценарий
+        setCategories(prev => [...prev, created])
+        setRows(prev => prev.map(r => (!r.category ? { ...r, category: String(created.id) } : r)))
+      }
+      closeCatCreator()
+    } catch (e) {
+      console.error('Ошибка создания категории:', e)
+      setCatError('Не удалось создать категорию')
+    } finally {
+      setCatSaving(false)
+    }
   }
 
   const handleSave = async () => {
@@ -166,9 +226,9 @@ const AddStock = ({ setActive }) => {
       const normalized = nonEmpty.map(normalize).map(n => {
         const code = generateUniqueCode(n.name, used)
         if (SEND_CODE_AS_ARRAY) {
-          return { ...n, code: [code] }   // когда бэк ждёт массив
+          return { ...n, code: [code] }
         }
-        return { ...n, code }             // когда бэк ждёт строку
+        return { ...n, code }
       })
 
       // финальная валидация
@@ -184,7 +244,7 @@ const AddStock = ({ setActive }) => {
       const res = await fetch(`${branchAPI}clients/stocks/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(normalized) // массив объектов с готовым code
+        body: JSON.stringify(normalized)
       })
 
       if (!res.ok) {
@@ -231,16 +291,40 @@ const AddStock = ({ setActive }) => {
 
             <div className={c.item}>
               <label htmlFor={`cat-${idx}`}>Категория</label>
-              <select
-                id={`cat-${idx}`}
-                value={row.category}
-                onChange={e => handleChange(idx, 'category', e.target.value)}
-              >
-                <option value="">‒ выберите ‒</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
+              <div className={c.inlineGroup}>
+                <select
+                  id={`cat-${idx}`}
+                  value={row.category}
+                  onChange={e => handleChange(idx, 'category', e.target.value)}
+                >
+                  <option value="">‒ выберите ‒</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+                <button type="button" className={c.smallBtn} onClick={openCatCreator}>
+                  + Новая
+                </button>
+              </div>
+
+              {/* инлайн-попап создания категории */}
+              {catCreatorOpen && (
+                <div className={c.newCatRow}>
+                  <input
+                    placeholder="Название категории"
+                    value={newCatName}
+                    onChange={e => setNewCatName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') saveCategory() }}
+                  />
+                  <button type="button" className={c.btnPrimary} onClick={saveCategory} disabled={catSaving}>
+                    {catSaving ? 'Сохраняю…' : 'Сохранить'}
+                  </button>
+                  <button type="button" className={c.btnGhost} onClick={closeCatCreator} disabled={catSaving}>
+                    Отмена
+                  </button>
+                  {!!catError && <div className={c.errorMsg}>{catError}</div>}
+                </div>
+              )}
             </div>
 
             <div className={c.item}>
