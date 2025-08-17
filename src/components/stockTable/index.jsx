@@ -5,7 +5,7 @@ import { API } from '../../api';
 import { Components } from '..';
 import Barcode from 'react-barcode';
 
-const STOCK_API = 'http://127.0.0.1:8000/';
+const STOCK_API = 'https://srezka.pythonanywhere.com/';
 // const STOCK_API = 'https://aunkarabalta.pythonanywhere.com';
 
 const StockTable = () => {

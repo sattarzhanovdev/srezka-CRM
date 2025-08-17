@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import styles from "./kassa.module.scss";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "https://srezka.pythonanywhere.com";
 const CATS_URL   = `${API_BASE}/clients/categories/`;
 const STOCKS_URL = `${API_BASE}/clients/stocks/`;
 const SALES_URL  = `${API_BASE}/clients/sales/`; // поправь если другой роут

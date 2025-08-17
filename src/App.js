@@ -8,7 +8,7 @@ import { API } from './api'
 import { useNavigate } from 'react-router-dom'
 
 // axios.defaults.baseURL = 'https://aunkarabalta.pythonanywhere.com/clients'
-axios.defaults.baseURL = 'http://127.0.0.1:8000/clients'
+axios.defaults.baseURL = 'https://srezka.pythonanywhere.com/clients'
 
 function App() {
   const nav = useNavigate()
