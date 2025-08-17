@@ -29,16 +29,6 @@ export const NavList = [
     id: 5,
     title: 'Касса',
     route: '/kassa'
-  },
-  {
-    id: 6,
-    title: 'Штрих коды',
-    route: '/codes'
-  },
-  {
-    id: 7,
-    title: 'Возврат товара',
-    route: '/return'
   }
 ]
 

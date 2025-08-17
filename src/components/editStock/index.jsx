@@ -18,9 +18,7 @@ const EditStock = ({ setActive, selectedBranch }) => {
 
   const [cats, setCats] = useState([])
 
-  const branchAPI = selectedBranch === 'sokuluk'
-    ? 'https://auncrm.pythonanywhere.com'
-    : 'https://aunkarabalta.pythonanywhere.com'
+  const branchAPI = "https://srezka.pythonanywhere.com"
 
   const handleSave = async () => {
     try {

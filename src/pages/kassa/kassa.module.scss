@@ -89,3 +89,34 @@
   .modal{box-shadow:none;width:100%;padding:0;}
   .modalActions{display:none;}
 }
+
+/* компактная модалка для форм */
+.modalSmall{
+  width:min(520px, 96vw);
+  background:#fff; border-radius:16px; box-shadow:0 14px 40px rgba(2,6,23,.25);
+  padding:18px;
+}
+.form{ display:grid; gap:12px; }
+.formRow{ display:grid; gap:6px; }
+.formRowCols{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form label{ font-size:12px; color:var(--muted); }
+.form input{
+  width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; outline:none;
+}
+.form input:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+
+.hintNeg{ font-size:12px; color:var(--muted); margin-top:-4px; }  
+
+/* формы модалок */
+.formGrid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:640px){ .formGrid { grid-template-columns:1fr; } }
+
+.formRow { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
+.formRow label { font-size:12px; color:var(--muted); }
+.input { padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; }
+
+.badgeRed, .badgeBlue {
+  font-size:11px; margin-left:8px; padding:2px 6px; border-radius:999px; vertical-align:middle;
+}
+.badgeRed  { background:#fee2e2; color:#b91c1c; }
+.badgeBlue { background:#dbeafe; color:#1d4ed8; }
