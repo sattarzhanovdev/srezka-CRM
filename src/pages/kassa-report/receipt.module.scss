@@ -1,0 +1,113 @@
+/* ---------------- базовые переменные ---------------- */
+$w: 90mm;            /* ширина чек-ленты */
+$g: #000;            /* ЧЁРНЫЙ — на термопринтере серый выглядит бледно */
+
+$fw-regular: 700;    /* жирнее обычного */
+$fw-bold:    900;    /* максимально жирный  */
+
+/* акцентируем, чтобы принтер вывел чисто-чёрный */
+@mixin solid-black {
+  color: $g !important;
+  -webkit-print-color-adjust: exact;   /* Chrome / Edge */
+  print-color-adjust: exact;           /* Firefox */
+}
+
+/* ---------------- экран / превью ------------------- */
+.invoicePos {
+  width: $w;
+  margin: 0 auto;
+  padding: 3mm 2mm;                   /* меньше полей → крупнее текст */
+  font-family: Arial, sans-serif;
+  background: #fff;
+  border: 1px solid $g;
+  border-radius: 2px;
+  box-shadow: none;                   /* у термобумаги нет теней */
+  @include solid-black;
+  font-weight: $fw-regular;
+}
+
+.title {
+  font: $fw-bold 17px/1 Arial, sans-serif; /* +1 px и 900 weight */
+  text-align: center;
+  margin: 0 0 2mm;
+}
+
+/* ---------------- таблица -------------------------- */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 15px/1.3 Arial, sans-serif;    /* чётче при термопечати */
+
+  th, td {
+    padding: 1mm 0;
+    font-weight: $fw-regular;
+    @include solid-black;
+  }
+
+  th { border-bottom: 1px dashed $g; }
+  tbody tr:not(:last-child) td { border-bottom: 1px dotted $g; }
+
+  .left  { text-align: left;  }
+  .right { text-align: right; }
+}
+
+/* итого / к оплате */
+.grand td {
+  font-weight: $fw-bold;
+  border-top: 1px solid $g;
+  @include solid-black;
+}
+
+/* ---------------- футер ---------------------------- */
+.footer {
+  margin-top: 2mm;
+  text-align: center;
+  font: $fw-regular 13px/1 Arial, sans-serif;
+  @include solid-black;
+}
+
+/* ---------------- кнопки (не печатаются) ----------- */
+.buttons {
+  position: fixed;
+  bottom: 12mm;
+  right: 10mm;
+  display: flex;
+  gap: 6px;
+
+  button {
+    padding: 5px 9px;
+    font: 14px/1 Arial, sans-serif;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    @include solid-black;
+    &.back  { background: #777; }
+    &.print { background: #006aff;
+              svg { font-size: 18px; } }
+  }
+}
+
+/* ---------------- печать --------------------------- */
+@page { size: $w auto; margin: 0; }   /* никаких полей */
+
+@media print {
+  html, body {
+    width: $w; height: auto;
+    margin: 0; padding: 0;
+    @include solid-black;
+    font-weight: $fw-regular;
+  }
+
+  body *           { visibility: hidden !important; }
+  .invoicePos,
+  .invoicePos *    { visibility: visible !important; }
+
+  .invoicePos {    /* убираем рамку/тени в финальной ленте */
+    border: none; box-shadow: none;
+  }
+
+  .buttons { display: none !important; }
+}

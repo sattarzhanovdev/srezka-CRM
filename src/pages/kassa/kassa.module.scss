@@ -1,0 +1,101 @@
+:global(:root) {
+  --bg: #fafafa;
+  --panel: #fff;
+  --ink: #111827;
+  --muted: #6b7280;
+  --muted-2: #9ca3af;
+  --brand: #2563eb;
+  --ok: #22c55e;
+  --danger: #ef4444;
+  --line: #e5e7eb;
+  --shadow: 0 4px 24px rgba(0,0,0,.06);
+  --radius: 16px;
+}
+
+.kassa {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  padding: 24px;
+}
+
+.grid {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1.1fr 1.6fr;
+}
+
+/* левая колонка */
+.cart { display: grid; grid-template-rows: 1fr auto; }
+
+.panel {
+  background: var(--panel);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.table { width: 100%; border-collapse: collapse; }
+.th {
+  text-align: left; padding: 10px; color: var(--muted);
+  font-weight: 600; border-bottom: 1px solid #e5e7eb;
+}
+.td {
+  padding: 10px; font-size: 14px; color: var(--ink);
+  vertical-align: middle; border-bottom: 1px solid #f1f5f9;
+}
+.sum { font-weight: 700; }
+.empty { color: var(--muted-2); }
+
+.btn {
+  border: 1px solid var(--line); background: #fff;
+  border-radius: 10px; padding: 8px 14px; cursor: pointer;
+  font-size: 14px; transition: .15s;
+
+  &Ghost { background: #f9fafb; }
+  &Pill { border-radius: 999px; padding: 8px 16px; font-weight: 600; }
+  &Active { background: var(--brand); border-color: var(--brand); color: #fff; }
+  &Qty { width: 28px; height: 28px; border-radius: 8px; line-height: 28px; }
+  &Danger { background: var(--danger); color: #fff; border: none; }
+  &Ok { background: var(--ok); color: #fff; border: none; border-radius: 12px; padding: 12px 20px; font-weight: 700; }
+}
+
+.actions { display: flex; gap: 10px; margin-top: 12px; }
+
+.total { display: grid; grid-template-columns: 1fr 120px; gap: 12px; }
+.lines { }
+.line { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+.lineLast { border-bottom: 0; }
+.pay { text-align: right; }
+.hint { color: var(--muted); margin-bottom: 6px; }
+.value { font-size: 28px; font-weight: 800; }
+
+.inputQty, .inputPrice {
+  width: 60px; text-align: center; padding: 6px;
+  border-radius: 8px; border: 1px solid var(--line);
+}
+.inputPrice { width: 80px; }
+
+/* правая колонка */
+.tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+
+.search { margin-bottom: 12px;
+  input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line); }
+}
+
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.card {
+  display: grid; grid-template-columns: 72px 1fr; gap: 12px;
+  padding: 12px; text-align: left; cursor: pointer;
+  background: var(--panel); border-radius: var(--radius); box-shadow: var(--shadow);
+  transition: .15s;
+
+  &:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.12); }
+}
+.cardImg { width:72px; height:72px; border-radius:12px; overflow:hidden; background:#f3f4f6; }
+.cardName { font-weight: 700; margin-bottom: 4px; }
+.cardSub { font-size: 12px; color: var(--muted); }
+.cardStock { font-size: 12px; color: var(--muted-2); margin-top: 4px; }
