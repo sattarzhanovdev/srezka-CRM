@@ -174,4 +174,4 @@ const StockTable = () => {
   );
 };
 
-export default StockTable;``
+export default StockTable;

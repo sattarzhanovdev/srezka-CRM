@@ -49,7 +49,7 @@ const AddStock = ({ setActive }) => {
   // множество существующих кодов (из бэка)
   const [existingCodes, setExistingCodes] = React.useState(new Set())
 
-  const branchAPI = 'http://srezka.pythonanywhere.com/'
+  const branchAPI = 'https://srezka.pythonanywhere.com/'
 
   React.useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && setActive(false)
