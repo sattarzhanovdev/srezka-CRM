@@ -3,41 +3,44 @@ import c from './workers.module.scss';
 import { Icons } from '../../assets/icons';
 import { API } from '../../api';
 import { Components } from '..';
-import Barcode from 'react-barcode';
+// import Barcode from 'react-barcode';
 
-const STOCK_API = 'https://srezka.pythonanywhere.com/';
-// const STOCK_API = 'https://aunkarabalta.pythonanywhere.com';
+const STOCK_API = 'https://srezka.pythonanywhere.com'; // ← без завершающего слэша
 
 const StockTable = () => {
   const [month, setMonth] = React.useState('');
-  const [clients, setClients] = React.useState(null);
+  const [clients, setClients] = React.useState([]);        // ← по умолчанию массив
   const [active, setActive] = React.useState(false);
   const [editActive, setEditActive] = React.useState(false);
   const [selectedWeek, setSelectedWeek] = React.useState(5);
   const [categories, setCategories] = React.useState([]);
-  const [selectedCategory, setSelectedCategory] = React.useState('');
-
-  const currentDate = new Date();
+  const [selectedCategory, setSelectedCategory] = React.useState(''); // будем хранить ID в виде строки
 
   React.useEffect(() => {
-    const monthName = currentDate.toLocaleString('ru', { month: 'long' });
+    const now = new Date();
+    const monthName = now.toLocaleString('ru', { month: 'long' });
     setMonth(monthName.charAt(0).toUpperCase() + monthName.slice(1));
 
+    // товары
     fetch(`${STOCK_API}/clients/stocks/`)
       .then(res => res.json())
-      .then(data => setClients(data.reverse()))
+      .then(data => setClients(Array.isArray(data) ? data.slice().reverse() : []))
       .catch(err => console.error('Ошибка загрузки товаров:', err));
   }, []);
 
   React.useEffect(() => {
+    // категории
     fetch(`${STOCK_API}/clients/categories/`)
       .then(res => res.json())
-      .then(data => setCategories(data))
+      .then(data => setCategories(Array.isArray(data) ? data : []))
       .catch(err => console.error('Ошибка загрузки категорий:', err));
   }, []);
 
   const getWeekNumber = (dateStr) => {
-    const day = new Date(dateStr).getDate();
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    if (isNaN(d)) return null;
+    const day = d.getDate();
     if (day >= 1 && day <= 7) return 1;
     if (day >= 8 && day <= 14) return 2;
     if (day >= 15 && day <= 21) return 3;
@@ -47,36 +50,47 @@ const StockTable = () => {
 
   const filterGoods = () => {
     let filtered = clients;
+
+    // фильтр по неделе (если нужен)
     if (selectedWeek !== 5) {
-      filtered = filtered?.filter(item =>
-        getWeekNumber(item.appointment_date) === selectedWeek
-      );
+      filtered = filtered?.filter(item => getWeekNumber(item.appointment_date) === selectedWeek);
     }
+
+    // фильтр по категории (по ID, а не по имени)
     if (selectedCategory) {
-      console.log(selectedCategory);
-      console.log(filtered);
-      
-      
-      filtered = filtered?.filter(item => item.category.name === selectedCategory);
+      filtered = filtered?.filter(item => {
+        const catId = item?.category?.id;
+        return String(catId || '') === String(selectedCategory);
+      });
     }
-    return filtered;
+
+    return filtered || [];
   };
 
-  const filteredItems = filterGoods() || [];
+  const filteredItems = filterGoods();
+
+  const totalAdded      = filteredItems.reduce((a, b) => a + Number(b.fixed_quantity || 0), 0);
+  const totalLeft       = filteredItems.reduce((a, b) => a + Number(b.quantity || 0), 0);
+  const totalBuyAmount  = filteredItems.reduce((a, b) => a + Number((b.price_seller || 0) * (b.fixed_quantity || 0)), 0);
+  const totalSellAmount = filteredItems.reduce((a, b) => a + Number((b.price || 0) * (b.fixed_quantity || 0)), 0);
 
   return (
     <div className={c.workers}>
       <div className={c.table}>
-        <select
-          className={c.filteration}
-          value={selectedCategory}
-          onChange={e => setSelectedCategory(e.target.value)}
-        >
-          <option value="">‒ Все категории ‒</option>
-          {categories && categories.map(item => (
-            <option key={item.id} value={item.name || `cat-${item.id}`}>{item.name}</option>
-          ))}
-        </select>
+        <div className={c.filtersRow}>
+          <select
+            className={c.filteration}
+            value={selectedCategory}
+            onChange={e => setSelectedCategory(e.target.value)}
+          >
+            <option value="">‒ Все категории ‒</option>
+            {categories.map(item => (
+              <option key={item.id} value={String(item.id)}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <table>
           <thead>
@@ -84,11 +98,10 @@ const StockTable = () => {
               <th>_</th>
               <th>{filteredItems.length} позиций</th>
               <th></th>
-              <th>{filteredItems.reduce((a, b) => a + Number(b.fixed_quantity), 0)}</th>
-              <th>{filteredItems.reduce((a, b) => a + Number(b.quantity), 0)}</th>
-              <th>{filteredItems.reduce((a, b) => a + Number(b.price_seller * b.fixed_quantity), 0)} сом</th>
-              <th>{filteredItems.reduce((a, b) => a + Number(b.price * b.fixed_quantity), 0)} сом</th>
-              <th></th>
+              <th>{totalAdded}</th>
+              <th>{totalLeft}</th>
+              <th>{totalBuyAmount} сом</th>
+              <th>{totalSellAmount} сом</th>
               <th></th>
             </tr>
             <tr>
@@ -99,7 +112,6 @@ const StockTable = () => {
               <th>Осталось</th>
               <th>Цена поставщика</th>
               <th>Цена продажи</th>
-              {/* <th>Штрих-код</th> */}
               <th>
                 <button onClick={() => setActive(true)}>+ Добавить</button>
               </th>
@@ -107,48 +119,49 @@ const StockTable = () => {
           </thead>
           <tbody>
             {filteredItems.length > 0 ? (
-              filteredItems.map((item, i) => (
-                <tr key={item.id}
-                    style={
-                      Number(item.quantity) <= 30
-                        ? { background: 'rgba(255, 0, 0, 0.3)' }
-                        : Number(item.quantity) <= 50
-                        ? { background: 'rgba(255, 255, 0, 0.3)' }
-                        : {}
-                    }>
-                  <td>
-                    <img
-                      src={Icons.edit}
-                      alt="edit"
-                      onClick={() => {
-                        localStorage.setItem('editStock', JSON.stringify(item));
-                        setEditActive(true);
-                      }}
-                    />
-                  </td>
-                  <td>{i + 1}</td>
-                  <td>{item.name}</td>
-                  <td>{item.fixed_quantity}</td>
-                  <td>{item.quantity}</td>
-                  <td>{item.price_seller}</td>
-                  <td>{item.price}</td>
-                  {/* <td>
-                    {item.code && item.code.split(',')[0] ? (
-                      <Barcode
-                        value={item.code.split(',')[0].trim()}
-                        width={0.6}
-                        height={20}
-                        fontSize={12}
+              filteredItems.map((item, i) => {
+                const qty = Number(item.quantity || 0);
+                const rowStyle =
+                  qty <= 30 ? { background: 'rgba(255, 0, 0, 0.15)' } :
+                  qty <= 50 ? { background: 'rgba(255, 255, 0, 0.15)' } :
+                  {};
+
+                return (
+                  <tr key={item.id} style={rowStyle}>
+                    <td>
+                      <img
+                        src={Icons.edit}
+                        alt="edit"
+                        onClick={() => {
+                          localStorage.setItem('editStock', JSON.stringify(item));
+                          setEditActive(true);
+                        }}
+                        style={{ cursor: 'pointer' }}
                       />
-                    ) : (
-                      <span>Нет кода</span>
-                    )} */}
-                  {/* </td> */}
-                </tr>
-              ))
+                    </td>
+                    <td>{i + 1}</td>
+                    <td>{item.name}</td>
+                    <td>{item.fixed_quantity}</td>
+                    <td>{item.quantity}</td>
+                    <td>{item.price_seller}</td>
+                    <td>{item.price}</td>
+                    {/* Если нужен штрихкод, раскомментируй и проверь формат code */}
+                    {/* <td>
+                      {item.code ? (
+                        <Barcode
+                          value={Array.isArray(item.code) ? (item.code[0] || '') : String(item.code).split(',')[0]?.trim() || ''}
+                          width={0.6}
+                          height={20}
+                          fontSize={12}
+                        />
+                      ) : <span>Нет кода</span>}
+                    </td> */}
+                  </tr>
+                );
+              })
             ) : (
               <tr>
-                <td colSpan={9}>Товаров нет</td>
+                <td colSpan={8} style={{ textAlign: 'center', color: '#888' }}>Товаров нет</td>
               </tr>
             )}
           </tbody>
@@ -161,4 +174,4 @@ const StockTable = () => {
   );
 };
 
-export default StockTable;
+export default StockTable;``
